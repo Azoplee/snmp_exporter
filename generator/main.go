@@ -32,12 +32,15 @@ import (
 
 // Generate a snmp_exporter config and write it out.
 func generateConfig(nodes *Node, nameToNode map[string]*Node, logger log.Logger) error {
-	outputPath, err := filepath.Abs(*outputPath)
+	outputDir, err := filepath.Abs(*outputDir)
 	if err != nil {
 		return fmt.Errorf("unable to determine absolute path for output")
 	}
 
-	content, err := ioutil.ReadFile("generator.yml")
+	device := strings.Replace(*inputFile, "generator_", "", 1)
+	outputPath := filepath.Join(outputDir, "snmp_" + device)
+
+	content, err := ioutil.ReadFile(*inputFile)
 	if err != nil {
 		return fmt.Errorf("error reading yml config: %s", err)
 	}
@@ -96,7 +99,8 @@ func generateConfig(nodes *Node, nameToNode map[string]*Node, logger log.Logger)
 var (
 	failOnParseErrors  = kingpin.Flag("fail-on-parse-errors", "Exit with a non-zero status if there are MIB parsing errors").Default("false").Bool()
 	generateCommand    = kingpin.Command("generate", "Generate snmp.yml from generator.yml")
-	outputPath         = generateCommand.Flag("output-path", "Path to to write resulting config file").Default("snmp.yml").Short('o').String()
+	inputFile          = generateCommand.Arg("input-file", "Input file. Must be with format generator_XXX.yaml").Required().String()
+	outputDir          = generateCommand.Flag("output-dir", "Directory to to write resulting config file").Short('o').String()
 	parseErrorsCommand = kingpin.Command("parse_errors", "Debug: Print the parse errors output by NetSNMP")
 	dumpCommand        = kingpin.Command("dump", "Debug: Dump the parsed and prepared MIBs")
 )
@@ -125,6 +129,19 @@ func main() {
 
 	switch command {
 	case generateCommand.FullCommand():
+		if *outputDir == "" {
+			cwd, err := os.Getwd()
+			if err != nil {
+				level.Error(logger).Log("msg", "Error getting current directory", "err", err)
+				os.Exit(1)
+			}
+			*outputDir = cwd
+		}
+		if !strings.HasPrefix(*inputFile, "generator_"){
+			level.Error(logger).Log("msg", "Input file must start with generator_")
+			os.Exit(1)
+		}
+
 		err := generateConfig(nodes, nameToNode, logger)
 		if err != nil {
 			level.Error(logger).Log("msg", "Error generating config netsnmp", "err", err)
