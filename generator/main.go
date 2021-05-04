@@ -98,7 +98,7 @@ func generateConfig(nodes *Node, nameToNode map[string]*Node, logger log.Logger)
 
 var (
 	failOnParseErrors  = kingpin.Flag("fail-on-parse-errors", "Exit with a non-zero status if there are MIB parsing errors").Default("false").Bool()
-	generateCommand    = kingpin.Command("generate", "Generate snmp.yml from generator.yml")
+	generateCommand    = kingpin.Command("generate", "Generate snmp_XXX.yml from generator_XXX.yml")
 	inputFile          = generateCommand.Arg("input-file", "Input file. Must be with format generator_XXX.yaml").Required().String()
 	outputDir          = generateCommand.Flag("output-dir", "Directory to to write resulting config file").Short('o').String()
 	parseErrorsCommand = kingpin.Command("parse_errors", "Debug: Print the parse errors output by NetSNMP")
